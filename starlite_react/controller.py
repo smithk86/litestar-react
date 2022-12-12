@@ -57,7 +57,7 @@ class ReactController(Controller):
     """
 
     @lru_cache
-    def get_file_contents(self, path: Path, root_path: str | None) -> bytes:
+    def get_file_contents(self, path: Path, root_path: str) -> bytes:
         """
         return the contents of the given file
         """
@@ -68,8 +68,12 @@ class ReactController(Controller):
 
         # detect {{ROOT_PATH}} in the static files and replace it with app.root_path
         if path.suffix in self.root_file_suffixes:
+            root_path_set: list[str] = []
+            root_path_set.extend(filter(None, root_path.split("/")))
+            root_path_set.extend(filter(None, self.path.split("/")))
+            full_root_path = "/" + "/".join(root_path_set) if root_path_set else ""
             file_content = file_content.replace(
-                b"{{ROOT_PATH}}", root_path.encode("utf-8") if root_path else b""
+                b"{{ROOT_PATH}}", full_root_path.encode("utf-8")
             )
 
         return file_content
