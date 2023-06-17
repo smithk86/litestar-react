@@ -1,22 +1,29 @@
-[tool]
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+files = "**/*.py"
+strict = "true"
+
 [tool.poetry]
-name = "starlite-react"
+name = "litestar-react"
 version = "0.1.1"
-description = "Serve React static files from Starlite"
+description = "Serve React static files from litestar"
 authors = ["Kyle Smith <smithk86@smc3.com>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/smithk86/starlite-react"
-repository = "https://github.com/smithk86/starlite-react"
-documentation = "https://smithk86.github.io/starlite-react"
+homepage = "https://github.com/smithk86/litestar-react"
+repository = "https://github.com/smithk86/litestar-react"
+documentation = "https://smithk86.github.io/litestar-react"
 classifiers = [
     "Intended Audience :: Developers",
-    "Topic :: Software Development :: Libraries :: Python Modules"
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4"
-starlite = "*"
+litestar = "*"
 
 [tool.poetry.group.example.dependencies]
 uvicorn = "*"
@@ -31,13 +38,6 @@ black = "*"
 
 [tool.poetry.scripts]
 pytest = "pytest:main"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.mypy]
-strict = "true"
 
 [tool.pytest.ini_options]
 addopts = "--mypy"

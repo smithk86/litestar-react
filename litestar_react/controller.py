@@ -1,22 +1,23 @@
 from functools import lru_cache
 from mimetypes import guess_type
 from pathlib import Path
+from typing import Any
 
-from starlite.connection import Request
-from starlite.controller import Controller
-from starlite.datastructures import Provide
-from starlite.exceptions import HTTPException, NotFoundException
-from starlite.handlers import get
-from starlite.response import Response
-from starlite.types import Dependencies
+from litestar.connection import Request
+from litestar.controller import Controller
+from litestar.di import Provide
+from litestar.exceptions import HTTPException, NotFoundException
+from litestar.handlers import get
+from litestar.response import Response
+from litestar.types import Dependencies
 
 
 class ReactFileResponse(Response[bytes]):
-    def render(self, content: bytes) -> bytes:
+    def render(self, content: bytes, *args: Any, **kwargs: Any) -> bytes:
         return content
 
 
-def get_root_path(request: Request[None, None]) -> str:
+def get_root_path(request: Request[Any, Any, Any]) -> str:
     return request.scope.get("root_path", "/")
 
 
@@ -51,7 +52,9 @@ class ReactController(Controller):
     """
         A set of strings which may contain the "{{ROOT_FILE}}" variable.
     """
-    dependencies: Dependencies = {"root_path": Provide(get_root_path)}
+    dependencies: Dependencies = {
+        "root_path": Provide(get_root_path, sync_to_thread=False)
+    }
     """
         Add the "root_path" dependency
     """
@@ -78,27 +81,27 @@ class ReactController(Controller):
 
         return file_content
 
-    @get("/static/{path:path}", name="react-static", include_in_schema=False)
-    async def static_files(self, root_path: str, path: Path) -> ReactFileResponse:
-        filepath = self.directory / "static" / str(path)[1:]
-        if not filepath.is_file():
-            raise NotFoundException()
-        # detect media type
-        media_type = get_media_type(filepath)
-        # get the contents of the file
-        file_content = self.get_file_contents(filepath, root_path)
-        return ReactFileResponse(content=file_content, media_type=media_type)
+    @get(
+        path=["/", "/{path:path}"],
+        name="react",
+        include_in_schema=False,
+        sync_to_thread=False,
+    )
+    def root(self, root_path: str, path: Path | None = None) -> ReactFileResponse:
+        filepath = self.directory / str(path)[1:]
+        is_static_file = str(path).startswith("/static")
 
-    @get(path=["/", "/{filename:str}"], name="react-root", include_in_schema=False)
-    async def root_files(
-        self, root_path: str, filename: Path | None = None
-    ) -> ReactFileResponse:
-        filepath = self.directory / filename if filename else self.directory
-        # if the request file does not exist, return the default file
-        if not filepath.is_file():
-            filepath = self.directory / self.default_index
+        if is_static_file:
+            if not filepath.is_file():
+                raise NotFoundException()
+        else:
+            # if the request file does not exist, return the default file
+            if not filepath.is_file():
+                filepath = self.directory / self.default_index
+
         # detect media type
         media_type = get_media_type(filepath)
+
         # get the contents of the file
         file_content = self.get_file_contents(filepath, root_path)
         return ReactFileResponse(content=file_content, media_type=media_type)

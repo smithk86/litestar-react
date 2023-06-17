@@ -1,14 +1,14 @@
 import pytest
 from pathlib import Path
 
-from starlite.controller import Controller
-from starlite.enums import MediaType
-from starlite.exceptions import NotFoundException
-from starlite.handlers import get
-from starlite.testing import create_test_client
+from litestar.controller import Controller
+from litestar.enums import MediaType
+from litestar.exceptions import NotFoundException
+from litestar.handlers import get
+from litestar.testing import create_test_client
 
 
-from starlite_react import ReactController
+from litestar_react import ReactController
 
 
 react_build_directory = Path(__file__).parent / "react-build"
@@ -50,11 +50,11 @@ def test_with_additional_routes() -> None:
     class ApiController(Controller):
         path = "/api"
 
-        @get(media_type=MediaType.TEXT)
+        @get(media_type=MediaType.TEXT, sync_to_thread=False)
         def api_root(self) -> str:
             return "Hello, World!"
 
-        @get(path="/{_:path}")
+        @get(path="/{_:path}", sync_to_thread=False)
         def not_found(self) -> None:
             raise NotFoundException()
 
@@ -82,6 +82,11 @@ def test_all_react_files(react_files: list[tuple[Path, bytes]]) -> None:
         directory = react_build_directory
 
     with create_test_client(route_handlers=[TestReactController]) as test_client:
+        # 404 should be thrown for non-existant static files
+        response = test_client.get(f"/static/thisFileDoesNotExist.json")
+        assert response.status_code == 404, f"payload: {response.text}"
+        assert response.text == '{"status_code":404,"detail":"Not Found"}'
+
         for path, content in react_files:
             expected_content_type = react_file_suffixes[path.suffix]
             response = test_client.get(f"/{path}")

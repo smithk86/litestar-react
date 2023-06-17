@@ -1,3 +1,4 @@
 *.pyc
 /react-app
 /.vscode
+/dist
