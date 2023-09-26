@@ -38,7 +38,7 @@ def react_files() -> list[tuple[Path, bytes]]:
         for x in filterd_files
     ]
     assert len(files) > 0
-    assert len([path for path, content in files if b"{{ROOT_PATH}}" in content]) > 0
+    assert len([path for path, content in files if b"{{PUBLIC_URL}}" in content]) > 0
 
     return files
 
@@ -97,9 +97,9 @@ def test_all_react_files(react_files: list[tuple[Path, bytes]]) -> None:
                 response.headers.get("content-type") == expected_content_type
             ), f"file: {path}"
 
-            # confirm ROOT_PATH is being replaced
-            if b"{{ROOT_PATH}}" in content:
-                assert "{{ROOT_PATH}}" not in response.text
+            # confirm PUBLIC_URL is being replaced
+            if b"{{PUBLIC_URL}}" in content:
+                assert "{{PUBLIC_URL}}" not in response.text
 
 
 def test_controller_path(react_files: list[tuple[Path, bytes]]) -> None:
@@ -118,9 +118,9 @@ def test_controller_path(react_files: list[tuple[Path, bytes]]) -> None:
                 response.headers.get("content-type") == expected_content_type
             ), f"file: {path}"
 
-            # confirm ROOT_PATH is being replaced
-            if b"{{ROOT_PATH}}" in content:
-                assert "{{ROOT_PATH}}" not in response.text
+            # confirm PUBLIC_URL is being replaced
+            if b"{{PUBLIC_URL}}" in content:
+                assert "{{PUBLIC_URL}}" not in response.text
 
 
 def test_root_path(react_files: list[tuple[Path, bytes]]) -> None:
@@ -141,7 +141,7 @@ def test_root_path(react_files: list[tuple[Path, bytes]]) -> None:
             ), f"file: {path}"
 
             # confirm ROOT_PATH is being replaced
-            if b"{{ROOT_PATH}}" in content:
+            if b"{{PUBLIC_URL}}" in content:
                 assert "/testpath" in response.text
 
 
@@ -164,7 +164,7 @@ def test_controller_and_root_path(react_files: list[tuple[Path, bytes]]) -> None
             ), f"file: {path}"
 
             # confirm ROOT_PATH is being replaced
-            if b"{{ROOT_PATH}}" in content:
+            if b"{{PUBLIC_URL}}" in content:
                 assert "/testpath/react" in response.text
 
     #     for path, content in react_files:
@@ -178,9 +178,9 @@ def test_controller_and_root_path(react_files: list[tuple[Path, bytes]]) -> None
     #             response.headers.get("content-type") == expected_content_type
     #         ), f"file: {path}"
 
-    #         # confirm ROOT_PATH is being replaced
-    #         if b"{{ROOT_PATH}}" in content:
-    #             assert "{{ROOT_PATH}}" not in response.text
+    #         # confirm PUBLIC_URL is being replaced
+    #         if b"{{PUBLIC_URL}}" in content:
+    #             assert "{{PUBLIC_URL}}" not in response.text
     #             assert root_path in response.text, f"file: {path}"
 
     #         response = test_client.get(f"/api")
@@ -199,3 +199,18 @@ def test_controller_and_root_path(react_files: list[tuple[Path, bytes]]) -> None
     #         assert response.status_code == 200, f"payload: {response.text}"
     #         assert response.headers.get("content-type") == "text/html; charset=utf-8"
     #         assert "You need to enable JavaScript to run this app." in response.text
+
+
+def test_replacement_values(react_files: list[tuple[Path, bytes]]) -> None:
+    class TestReactController(ReactController):
+        directory = react_build_directory
+        replacement_values = {
+            "{{CUSTOM_ENV_VALUE}}": "testing123",
+        }
+
+    with create_test_client(
+        route_handlers=[TestReactController],
+    ) as test_client:
+        response = test_client.get(f"/index.html")
+        assert response.status_code == 200, f"payload: {response.text}"
+        assert "testing123" in response.text

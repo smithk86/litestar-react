@@ -50,13 +50,17 @@ class ReactController(Controller):
     """
     root_file_suffixes: set[str] = {".css", ".html", ".js", ".json", ".map"}
     """
-        A set of strings which may contain the "{{ROOT_FILE}}" variable.
+        A set of strings which may contain the "{{PUBLIC_URL}}" variable.
     """
     dependencies: Dependencies = {
         "root_path": Provide(get_root_path, sync_to_thread=False)
     }
     """
         Add the "root_path" dependency
+    """
+    replacement_values: dict[str, str] = {}
+    """
+        Values to replace in the static files
     """
 
     @lru_cache
@@ -69,14 +73,19 @@ class ReactController(Controller):
         with open(path, "rb") as fh:
             file_content = fh.read()
 
-        # detect {{ROOT_PATH}} in the static files and replace it with app.root_path
+        # detect {{PUBLIC_URL}} in the static files and replace it with app.root_path
         if path.suffix in self.root_file_suffixes:
             root_path_set: list[str] = []
             root_path_set.extend(filter(None, root_path.split("/")))
             root_path_set.extend(filter(None, self.path.split("/")))
             full_root_path = "/" + "/".join(root_path_set) if root_path_set else ""
             file_content = file_content.replace(
-                b"{{ROOT_PATH}}", full_root_path.encode("utf-8")
+                b"{{PUBLIC_URL}}", full_root_path.encode("utf-8")
+            )
+
+        for inital_value, replacement_value in self.replacement_values.items():
+            file_content = file_content.replace(
+                inital_value.encode("utf-8"), replacement_value.encode("utf-8")
             )
 
         return file_content

@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from pydantic import BaseSettings, validator
 from litestar.app import Litestar
 from litestar.controller import Controller
 from litestar.enums import MediaType
@@ -25,26 +24,14 @@ Run example-app.py using Poetry and Uvicorn:
 _dir = Path(__file__).parent
 
 
-class Settings(BaseSettings):
-    react_directory: Path = _dir / "tests/react-build"
-
-    @validator("react_directory")
-    def validate_react_directory(cls, v: Path) -> Path:
-        assert v.is_dir(), f"directory does not exist: {v}"
-        return v
-
-
-settings = Settings()
-
-
 class ApiController(Controller):
     path = "/api"
 
-    @get(media_type=MediaType.TEXT)
+    @get(media_type=MediaType.TEXT, sync_to_thread=False)
     def api_root(self) -> str:
         return "Hello, World!"
 
-    @get(path="/{_:path}")
+    @get(path="/{_:path}", sync_to_thread=False)
     def not_found(self) -> None:
         raise NotFoundException()
 
@@ -54,7 +41,7 @@ class AppReactController(ReactController):
     Subclass ReactController and set the `directory` field
     """
 
-    directory = settings.react_directory
+    directory = _dir / "tests/react-build"
 
 
 """
