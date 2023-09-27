@@ -1,4 +1,4 @@
-from .controller import ReactController
+from .controller import BaseReactController
 
 
-__all__ = ["ReactController"]
+__all__ = ["BaseReactController"]

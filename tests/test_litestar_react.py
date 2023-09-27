@@ -8,7 +8,7 @@ from litestar.handlers import get
 from litestar.testing import create_test_client
 
 
-from litestar_react import ReactController
+from litestar_react import BaseReactController
 
 
 react_build_directory = Path(__file__).parent / "react-build"
@@ -44,7 +44,7 @@ def react_files() -> list[tuple[Path, bytes]]:
 
 
 def test_with_additional_routes() -> None:
-    class TestReactController(ReactController):
+    class ReactController(BaseReactController):
         directory = react_build_directory
 
     class ApiController(Controller):
@@ -59,7 +59,7 @@ def test_with_additional_routes() -> None:
             raise NotFoundException()
 
     with create_test_client(
-        route_handlers=[TestReactController, ApiController]
+        route_handlers=[ReactController, ApiController]
     ) as test_client:
         response = test_client.get(f"/api")
         assert response.status_code == 200, f"payload: {response.text}"
@@ -78,10 +78,10 @@ def test_with_additional_routes() -> None:
 
 
 def test_all_react_files(react_files: list[tuple[Path, bytes]]) -> None:
-    class TestReactController(ReactController):
+    class ReactController(BaseReactController):
         directory = react_build_directory
 
-    with create_test_client(route_handlers=[TestReactController]) as test_client:
+    with create_test_client(route_handlers=[ReactController]) as test_client:
         # 404 should be thrown for non-existant static files
         response = test_client.get(f"/static/thisFileDoesNotExist.json")
         assert response.status_code == 404, f"payload: {response.text}"
@@ -103,11 +103,11 @@ def test_all_react_files(react_files: list[tuple[Path, bytes]]) -> None:
 
 
 def test_controller_path(react_files: list[tuple[Path, bytes]]) -> None:
-    class TestReactController(ReactController):
+    class ReactController(BaseReactController):
         path = "/react"
         directory = react_build_directory
 
-    with create_test_client(route_handlers=[TestReactController]) as test_client:
+    with create_test_client(route_handlers=[ReactController]) as test_client:
         for path, content in react_files:
             expected_content_type = react_file_suffixes[path.suffix]
             response = test_client.get(f"/react/{path}")
@@ -124,11 +124,11 @@ def test_controller_path(react_files: list[tuple[Path, bytes]]) -> None:
 
 
 def test_root_path(react_files: list[tuple[Path, bytes]]) -> None:
-    class TestReactController(ReactController):
+    class ReactController(BaseReactController):
         directory = react_build_directory
 
     with create_test_client(
-        route_handlers=[TestReactController], root_path="/testpath"
+        route_handlers=[ReactController], root_path="/testpath"
     ) as test_client:
         for path, content in react_files:
             expected_content_type = react_file_suffixes[path.suffix]
@@ -146,12 +146,12 @@ def test_root_path(react_files: list[tuple[Path, bytes]]) -> None:
 
 
 def test_controller_and_root_path(react_files: list[tuple[Path, bytes]]) -> None:
-    class TestReactController(ReactController):
+    class ReactController(BaseReactController):
         path = "/react"
         directory = react_build_directory
 
     with create_test_client(
-        route_handlers=[TestReactController], root_path="/testpath"
+        route_handlers=[ReactController], root_path="/testpath"
     ) as test_client:
         for path, content in react_files:
             expected_content_type = react_file_suffixes[path.suffix]
@@ -202,14 +202,14 @@ def test_controller_and_root_path(react_files: list[tuple[Path, bytes]]) -> None
 
 
 def test_replacement_values(react_files: list[tuple[Path, bytes]]) -> None:
-    class TestReactController(ReactController):
+    class ReactController(BaseReactController):
         directory = react_build_directory
         replacement_values = {
             "{{CUSTOM_ENV_VALUE}}": "testing123",
         }
 
     with create_test_client(
-        route_handlers=[TestReactController],
+        route_handlers=[ReactController],
     ) as test_client:
         response = test_client.get(f"/index.html")
         assert response.status_code == 200, f"payload: {response.text}"

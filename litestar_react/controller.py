@@ -39,7 +39,7 @@ def get_media_type(path: Path) -> str:
             )
 
 
-class ReactController(Controller):
+class BaseReactController(Controller):
     directory: Path
     """
         A [Path][pathlib.Path] object to the directory which holds the built React application files.

@@ -6,7 +6,7 @@ from litestar.enums import MediaType
 from litestar.exceptions import NotFoundException
 from litestar.handlers import get
 
-from litestar_react import ReactController
+from litestar_react import BaseReactController
 
 
 """
@@ -36,7 +36,7 @@ class ApiController(Controller):
         raise NotFoundException()
 
 
-class AppReactController(ReactController):
+class ReactController(BaseReactController):
     """
     Subclass ReactController and set the `directory` field
     """
@@ -53,4 +53,4 @@ to work without litestar interfering.
 In this example, ApiController has a catch-all route which will properly throw a 404 if a
 non-existant API call is attempted within its path (/api).
 """
-app = Litestar(route_handlers=[AppReactController, ApiController])
+app = Litestar(route_handlers=[ReactController, ApiController])
