@@ -80,6 +80,9 @@ def test_with_additional_routes() -> None:
 def test_all_react_files(react_files: list[tuple[Path, bytes]]) -> None:
     class ReactController(BaseReactController):
         directory = react_build_directory
+        replacement_values = {
+            "{{PUBLIC_URL}}": "",
+        }
 
     with create_test_client(route_handlers=[ReactController]) as test_client:
         # 404 should be thrown for non-existant static files
@@ -106,6 +109,9 @@ def test_controller_path(react_files: list[tuple[Path, bytes]]) -> None:
     class ReactController(BaseReactController):
         path = "/react"
         directory = react_build_directory
+        replacement_values = {
+            "{{PUBLIC_URL}}": "",
+        }
 
     with create_test_client(route_handlers=[ReactController]) as test_client:
         for path, content in react_files:
@@ -126,10 +132,11 @@ def test_controller_path(react_files: list[tuple[Path, bytes]]) -> None:
 def test_root_path(react_files: list[tuple[Path, bytes]]) -> None:
     class ReactController(BaseReactController):
         directory = react_build_directory
+        replacement_values = {
+            "{{PUBLIC_URL}}": "/testpath",
+        }
 
-    with create_test_client(
-        route_handlers=[ReactController], root_path="/testpath"
-    ) as test_client:
+    with create_test_client(route_handlers=[ReactController]) as test_client:
         for path, content in react_files:
             expected_content_type = react_file_suffixes[path.suffix]
             response = test_client.get(f"/{path}")
@@ -149,10 +156,11 @@ def test_controller_and_root_path(react_files: list[tuple[Path, bytes]]) -> None
     class ReactController(BaseReactController):
         path = "/react"
         directory = react_build_directory
+        replacement_values = {
+            "{{PUBLIC_URL}}": "/testpath/react",
+        }
 
-    with create_test_client(
-        route_handlers=[ReactController], root_path="/testpath"
-    ) as test_client:
+    with create_test_client(route_handlers=[ReactController]) as test_client:
         for path, content in react_files:
             expected_content_type = react_file_suffixes[path.suffix]
             response = test_client.get(f"/react/{path}")

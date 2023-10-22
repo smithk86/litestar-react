@@ -17,10 +17,6 @@ class ReactFileResponse(Response[bytes]):
         return content
 
 
-def get_root_path(request: Request[Any, Any, Any]) -> str:
-    return request.scope.get("root_path", "/")
-
-
 @lru_cache
 def get_media_type(path: Path) -> str:
     """
@@ -48,15 +44,9 @@ class BaseReactController(Controller):
     """
         A string to represent the default file to server.
     """
-    root_file_suffixes: set[str] = {".css", ".html", ".js", ".json", ".map"}
+    replacement_file_suffixes: set[str] = {".css", ".html", ".js", ".json", ".map"}
     """
-        A set of strings which may contain the "{{PUBLIC_URL}}" variable.
-    """
-    dependencies: Dependencies = {
-        "root_path": Provide(get_root_path, sync_to_thread=False)
-    }
-    """
-        Add the "root_path" dependency
+        A set of file extention strings which may contain replacement values
     """
     replacement_values: dict[str, str] = {}
     """
@@ -64,7 +54,7 @@ class BaseReactController(Controller):
     """
 
     @lru_cache
-    def get_file_contents(self, path: Path, root_path: str) -> bytes:
+    def get_file_contents(self, path: Path) -> bytes:
         """
         return the contents of the given file
         """
@@ -72,16 +62,6 @@ class BaseReactController(Controller):
         # get the contents of the file
         with open(path, "rb") as fh:
             file_content = fh.read()
-
-        # detect {{PUBLIC_URL}} in the static files and replace it with app.root_path
-        if path.suffix in self.root_file_suffixes:
-            root_path_set: list[str] = []
-            root_path_set.extend(filter(None, root_path.split("/")))
-            root_path_set.extend(filter(None, self.path.split("/")))
-            full_root_path = "/" + "/".join(root_path_set) if root_path_set else ""
-            file_content = file_content.replace(
-                b"{{PUBLIC_URL}}", full_root_path.encode("utf-8")
-            )
 
         for inital_value, replacement_value in self.replacement_values.items():
             file_content = file_content.replace(
@@ -96,7 +76,7 @@ class BaseReactController(Controller):
         include_in_schema=False,
         sync_to_thread=False,
     )
-    def root(self, root_path: str, path: Path | None = None) -> ReactFileResponse:
+    def root(self, path: Path | None = None) -> ReactFileResponse:
         filepath = self.directory / str(path)[1:]
         is_static_file = str(path).startswith("/static")
 
@@ -112,5 +92,5 @@ class BaseReactController(Controller):
         media_type = get_media_type(filepath)
 
         # get the contents of the file
-        file_content = self.get_file_contents(filepath, root_path)
+        file_content = self.get_file_contents(filepath)
         return ReactFileResponse(content=file_content, media_type=media_type)
