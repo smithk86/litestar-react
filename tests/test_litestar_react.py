@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 
+import httpx
 from litestar.controller import Controller
 from litestar.enums import MediaType
 from litestar.exceptions import NotFoundException
@@ -222,3 +223,26 @@ def test_replacement_values(react_files: list[tuple[Path, bytes]]) -> None:
         response = test_client.get(f"/index.html")
         assert response.status_code == 200, f"payload: {response.text}"
         assert "testing123" in response.text
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "//etc/passwd",
+        "///etc/passwd",
+        "http://localhost////////etc/passwd",
+    ],
+)
+def test_http_directory_traversal(
+    react_files: list[tuple[Path, bytes]], url: str
+) -> None:
+    class ReactController(BaseReactController):
+        directory = react_build_directory
+
+    with create_test_client(
+        route_handlers=[ReactController],
+    ) as test_client:
+        response = test_client.get(url)
+        assert response.status_code == 200, f"payload: {response.text}"
+        # this should be the content of index.html
+        assert response.text.startswith("<!doctype html>")
