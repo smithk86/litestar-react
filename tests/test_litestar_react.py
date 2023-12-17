@@ -1,7 +1,6 @@
 import pytest
 from pathlib import Path
 
-import httpx
 from litestar.controller import Controller
 from litestar.enums import MediaType
 from litestar.exceptions import NotFoundException
@@ -95,6 +94,17 @@ def test_all_react_files(react_files: list[tuple[Path, bytes]]) -> None:
             expected_content_type = react_file_suffixes[path.suffix]
             response = test_client.get(f"/{path}")
             assert response.status_code == 200, f"payload: {response.text}"
+
+            if str(path).startswith("static/"):
+                assert (
+                    response.headers.get("cache-control")
+                    == "public, max-age=31536000, immutable"
+                )
+            else:
+                assert (
+                    response.headers.get("cache-control")
+                    == "max-age=0, no-cache, no-store, must-revalidate"
+                )
 
             # confirm the correct content-type is set
             assert (
