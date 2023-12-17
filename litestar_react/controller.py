@@ -112,9 +112,9 @@ class BaseReactController(Controller):
                 raise NotFoundException()
         else:
             # if the request file does not exist, return the default file
-            if self.index_file_headers:
-                headers += self.index_file_headers
             if not filepath.is_file():
+                if self.index_file_headers:
+                    headers += self.index_file_headers
                 filepath = self.directory / self.default_index
 
         # detect media type

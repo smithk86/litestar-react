@@ -8,7 +8,7 @@ strict = "true"
 
 [tool.poetry]
 name = "litestar-react"
-version = "0.4.0"
+version = "0.4.1"
 description = "Serve React static files from litestar"
 authors = ["Kyle Smith <smithk86@smc3.com>"]
 license = "MIT"

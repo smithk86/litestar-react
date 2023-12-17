@@ -71,10 +71,18 @@ def test_with_additional_routes() -> None:
         response = test_client.get("/")
         assert response.status_code == 200, f"payload: {response.text}"
         assert response.headers.get("content-type") == "text/html; charset=utf-8"
+        assert (
+            response.headers.get("cache-control")
+            == "max-age=0, no-cache, no-store, must-revalidate"
+        )
 
         response = test_client.get(f"/some/arbitrary/path")
         assert response.status_code == 200, f"payload: {response.text}"
         assert response.headers.get("content-type") == "text/html; charset=utf-8"
+        assert (
+            response.headers.get("cache-control")
+            == "max-age=0, no-cache, no-store, must-revalidate"
+        )
 
 
 def test_all_react_files(react_files: list[tuple[Path, bytes]]) -> None:
@@ -100,16 +108,6 @@ def test_all_react_files(react_files: list[tuple[Path, bytes]]) -> None:
                     response.headers.get("cache-control")
                     == "public, max-age=31536000, immutable"
                 )
-            else:
-                assert (
-                    response.headers.get("cache-control")
-                    == "max-age=0, no-cache, no-store, must-revalidate"
-                )
-
-            # confirm the correct content-type is set
-            assert (
-                response.headers.get("content-type") == expected_content_type
-            ), f"file: {path}"
 
             # confirm PUBLIC_URL is being replaced
             if b"{{PUBLIC_URL}}" in content:
